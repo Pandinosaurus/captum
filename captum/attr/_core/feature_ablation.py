@@ -30,7 +30,7 @@ from captum._utils.common import (
     _run_forward,
 )
 from captum._utils.exceptions import FeatureAblationFutureError
-from captum._utils.progress import progress, SimpleProgress
+from captum._utils.progress import progress
 from captum._utils.typing import BaselineType, TargetType, TensorOrTupleOfTensorsGeneric
 from captum.attr._utils.attribution import PerturbationAttribution
 from captum.attr._utils.common import (
@@ -41,10 +41,7 @@ from captum.log import log_usage
 from torch import dtype, Tensor
 from torch.futures import collect_all, Future
 
-try:
-    from tqdm.auto import tqdm
-except ImportError:
-    tqdm = None
+from tqdm.auto import tqdm
 
 IterableType = TypeVar("IterableType")
 
@@ -404,10 +401,10 @@ class FeatureAblation(PerturbationAttribution):
         if attr_progress is not None:
             attr_progress.close()
 
-        # pyre-fixme[7]: Expected `Variable[TensorOrTupleOfTensorsGeneric <:
-        # [Tensor, typing.Tuple[Tensor, ...]]]`
-        # but got `Union[Tensor, typing.Tuple[Tensor, ...]]`.
-        return self._generate_result(total_attrib, weights, is_inputs_tuple)  # type: ignore # noqa: E501 line too long
+        return cast(
+            TensorOrTupleOfTensorsGeneric,
+            self._generate_result(total_attrib, weights, is_inputs_tuple),
+        )
 
     def _attribute_with_independent_feature_masks(
         self,
@@ -418,7 +415,7 @@ class FeatureAblation(PerturbationAttribution):
         formatted_feature_mask: Tuple[Tensor, ...],
         num_examples: int,
         perturbations_per_eval: int,
-        attr_progress: Optional[Union[SimpleProgress[IterableType], tqdm]],
+        attr_progress: Optional[tqdm],
         initial_eval: Tensor,
         flattened_initial_eval: Tensor,
         n_outputs: int,
@@ -500,7 +497,7 @@ class FeatureAblation(PerturbationAttribution):
         target: TargetType,
         baselines: BaselineType,
         formatted_feature_mask: Tuple[Tensor, ...],
-        attr_progress: Optional[Union[SimpleProgress[IterableType], tqdm]],
+        attr_progress: Optional[tqdm],
         flattened_initial_eval: Tensor,
         initial_eval: Tensor,
         n_outputs: int,
@@ -632,8 +629,7 @@ class FeatureAblation(PerturbationAttribution):
                 all_empty = False
             if self._min_examples_per_batch_grouped is not None and (
                 formatted_inputs[tensor_idx].shape[0]
-                # pyre-ignore[58]: Type has been narrowed to int
-                < self._min_examples_per_batch_grouped
+                < cast(int, self._min_examples_per_batch_grouped)
             ):
                 should_skip = True
                 break
@@ -792,35 +788,35 @@ class FeatureAblation(PerturbationAttribution):
             )
 
             if enable_cross_tensor_attribution:
-                # pyre-fixme[7]: Expected `Future[Variable[TensorOrTupleOfTensorsGeneric
-                # <:[Tensor, typing.Tuple[Tensor, ...]]]]` but got
-                # `Future[Union[Tensor, typing.Tuple[Tensor, ...]]]`
-                return self._attribute_with_cross_tensor_feature_masks_future(  # type: ignore # noqa: E501 line too long
-                    formatted_inputs=formatted_inputs,
-                    formatted_additional_forward_args=formatted_additional_forward_args,
-                    target=target,
-                    baselines=baselines,
-                    formatted_feature_mask=formatted_feature_mask,
-                    attr_progress=attr_progress,
-                    processed_initial_eval_fut=processed_initial_eval_fut,
-                    is_inputs_tuple=is_inputs_tuple,
-                    perturbations_per_eval=perturbations_per_eval,
+                return cast(
+                    Future[TensorOrTupleOfTensorsGeneric],
+                    self._attribute_with_cross_tensor_feature_masks_future(
+                        formatted_inputs=formatted_inputs,
+                        formatted_additional_forward_args=formatted_additional_forward_args,  # noqa: E501 line too long
+                        target=target,
+                        baselines=baselines,
+                        formatted_feature_mask=formatted_feature_mask,
+                        attr_progress=attr_progress,
+                        processed_initial_eval_fut=processed_initial_eval_fut,
+                        is_inputs_tuple=is_inputs_tuple,
+                        perturbations_per_eval=perturbations_per_eval,
+                    ),
                 )
             else:
-                # pyre-fixme[7]: Expected `Future[Variable[TensorOrTupleOfTensorsGeneric
-                # <:[Tensor, typing.Tuple[Tensor, ...]]]]` but got
-                # `Future[Union[Tensor, typing.Tuple[Tensor, ...]]]`
-                return self._attribute_with_independent_feature_masks_future(  # type: ignore # noqa: E501 line too long
-                    formatted_inputs,
-                    formatted_additional_forward_args,
-                    target,
-                    baselines,
-                    formatted_feature_mask,
-                    perturbations_per_eval,
-                    attr_progress,
-                    processed_initial_eval_fut,
-                    is_inputs_tuple,
-                    **kwargs,
+                return cast(
+                    Future[TensorOrTupleOfTensorsGeneric],
+                    self._attribute_with_independent_feature_masks_future(  # type: ignore # noqa: E501 line too long
+                        formatted_inputs,
+                        formatted_additional_forward_args,
+                        target,
+                        baselines,
+                        formatted_feature_mask,
+                        perturbations_per_eval,
+                        attr_progress,
+                        processed_initial_eval_fut,
+                        is_inputs_tuple,
+                        **kwargs,
+                    ),
                 )
 
     def _attribute_with_independent_feature_masks_future(
@@ -831,7 +827,7 @@ class FeatureAblation(PerturbationAttribution):
         baselines: BaselineType,
         formatted_feature_mask: Tuple[Tensor, ...],
         perturbations_per_eval: int,
-        attr_progress: Optional[Union[SimpleProgress[IterableType], tqdm]],
+        attr_progress: Optional[tqdm],
         processed_initial_eval_fut: Future[
             Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]
         ],
@@ -942,7 +938,7 @@ class FeatureAblation(PerturbationAttribution):
         target: TargetType,
         baselines: BaselineType,
         formatted_feature_mask: Tuple[Tensor, ...],
-        attr_progress: Optional[Union[SimpleProgress[IterableType], tqdm]],
+        attr_progress: Optional[tqdm],
         processed_initial_eval_fut: Future[
             Tuple[List[Tensor], List[Tensor], Tensor, Tensor, int, dtype]
         ],
@@ -1105,7 +1101,6 @@ class FeatureAblation(PerturbationAttribution):
                 "_fut_tuple_to_accumulate_fut_list_cross_tensor failed"
             ) from e
 
-    # pyre-fixme[3] return type must be annotated
     def _attribute_progress_setup(
         self,
         formatted_inputs: Tuple[Tensor, ...],
@@ -1113,7 +1108,7 @@ class FeatureAblation(PerturbationAttribution):
         enable_cross_tensor_attribution: bool,
         perturbations_per_eval: int,
         **kwargs: Any,
-    ):
+    ) -> tqdm:
         feature_counts = self._get_feature_counts(
             formatted_inputs, feature_mask, **kwargs
         )
