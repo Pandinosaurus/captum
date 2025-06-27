@@ -66,7 +66,7 @@ TEST_REQUIRES = ["pytest", "pytest-cov", "parameterized", "flask", "flask-compre
 REMOTE_REQUIRES = ["openai"]
 
 DEV_REQUIRES = (
-    INSIGHTS_REQUIRES
+    TUTORIALS_REQUIRES
     + TEST_REQUIRES
     + REMOTE_REQUIRES
     + [
@@ -76,10 +76,12 @@ DEV_REQUIRES = (
         "sphinx-autodoc-typehints",
         "sphinxcontrib-katex",
         "mypy>=0.760",
+        "pyre-check-nightly==0.0.101750936314",
         "usort==1.0.2",
         "ufmt",
         "scikit-learn",
         "annoy",
+        "click<8.2.0",
     ]
 )
 
@@ -163,7 +165,7 @@ if __name__ == "__main__":
             "matplotlib",
             "numpy<2.0",
             "packaging",
-            "torch>=1.10",
+            "torch>=1.13",
             "tqdm",
         ],
         packages=find_packages(exclude=("tests", "tests.*")),

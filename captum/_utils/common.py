@@ -91,7 +91,7 @@ def _is_tuple(inputs: Tensor) -> Literal[False]: ...
 
 @typing.overload
 def _is_tuple(
-    inputs: TensorOrTupleOfTensorsGeneric,  # type: ignore
+    inputs: Union[Tensor, Tuple[Tensor, ...]],
 ) -> bool: ...
 
 
@@ -251,8 +251,6 @@ def _format_tensor_into_tuples(
     return inputs
 
 
-# pyre-fixme[3]: Return annotation cannot be `Any`.
-# pyre-fixme[2]: Parameter annotation cannot be `Any`.
 def _format_inputs(inputs: Any, unpack_inputs: bool = True) -> Any:
     return (
         inputs
@@ -373,8 +371,6 @@ def _expand_target(
 def _expand_feature_mask(
     feature_mask: Union[Tensor, Tuple[Tensor, ...]], n_samples: int
 ) -> Tuple[Tensor, ...]:
-    # pyre-fixme[6]: For 1st argument expected `Tensor` but got `Union[Tensor,
-    #  typing.Tuple[Tensor, ...]]`.
     is_feature_mask_tuple = _is_tuple(feature_mask)
     feature_mask = _format_tensor_into_tuples(feature_mask)
     feature_mask_new = tuple(
@@ -571,7 +567,6 @@ def _construct_future_forward(original_forward: Callable) -> Callable:
 def _run_forward(
     # pyre-fixme[24]: Generic type `Callable` expects 2 type parameters.
     forward_func: Callable,
-    # pyre-fixme[2]: Parameter annotation cannot be `Any`.
     inputs: Any,
     target: TargetType = None,
     additional_forward_args: Optional[object] = None,
@@ -756,7 +751,6 @@ def _extract_device(
 
 def _reduce_list(
     val_list: Sequence[TupleOrTensorOrBoolGeneric],
-    # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
     # pyre-fixme[24]: Generic type `list` expects 1 type parameter, use
     #  `typing.List[<element type>]` to avoid runtime subscripting errors.
     red_func: Callable[[List], Any] = torch.cat,
@@ -834,7 +828,6 @@ def _flatten_tensor_or_tuple(inp: TensorOrTupleOfTensorsGeneric) -> Tensor:
     return torch.cat([single_inp.flatten() for single_inp in inp])
 
 
-# pyre-fixme[3]: Return annotation cannot be `Any`.
 def _get_module_from_name(model: Module, layer_name: str) -> Any:
     r"""
     Returns the module (layer) object, given its (string) name
