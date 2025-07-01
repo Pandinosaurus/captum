@@ -1,4 +1,4 @@
-name: Unit-tests for Pip install with mypy type checks
+name: Unit-tests for Pip install with type checks
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ jobs:
       matrix:
         pytorch_args: ["", "-n"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     with:
       runner: linux.12xlarge
       docker-image: cimg/python:3.11
@@ -23,5 +23,6 @@ jobs:
         sudo chmod -R 777 .
         ./scripts/install_via_pip.sh ${{ matrix.pytorch_args }}
         ./scripts/run_mypy.sh
+        pyre check
         # Run Tests
         python3 -m pytest -ra --cov=. --cov-report term-missing

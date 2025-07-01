@@ -6,6 +6,7 @@ from itertools import cycle
 from typing import (
     Any,
     Callable,
+    cast,
     Dict,
     Iterable,
     List,
@@ -81,16 +82,10 @@ def _get_context() -> str:
     return _CONTEXT_NONE
 
 
-# pyre-fixme[4]: Attribute annotation cannot be `Any`.
-# pyre-fixme[2]: Parameter annotation cannot be `Any`.
 VisualizationOutput = namedtuple(
     "VisualizationOutput", "feature_outputs actual predicted active_index model_index"
 )
-# pyre-fixme[4]: Attribute annotation cannot be `Any`.
-# pyre-fixme[2]: Parameter annotation cannot be `Any`.
 Contribution = namedtuple("Contribution", "name percent")
-# pyre-fixme[4]: Attribute annotation cannot be `Any`.
-# pyre-fixme[2]: Parameter annotation cannot be `Any`.
 SampleCache = namedtuple("SampleCache", "inputs additional_forward_args label")
 
 
@@ -401,14 +396,12 @@ class AttributionVisualizer:
         single_model_index=None,
     ) -> Optional[List[VisualizationOutput]]:
         # Use all models, unless the user wants to render data for a particular one
-        models_used = (
+        models_used: List[Module] = (
             [self.models[single_model_index]]
             if single_model_index is not None
-            else self.models
+            else cast(List[Module], self.models)
         )
         results = []
-        # pyre-fixme[6]: For 1st argument expected `Iterable[_T]` but got
-        #  `Union[List[Any], Module]`.
         for model_index, model in enumerate(models_used):
             # Get list of model visualizations for each input
             actual_label_output = None
